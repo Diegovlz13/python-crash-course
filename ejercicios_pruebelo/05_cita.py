@@ -1,0 +1,1 @@
+print(f'\tSeneca once said, "No hay viento favorable para \n\tel que no sabe adónde va."')
