@@ -1,9 +1,12 @@
 import sys
+from random import random
 import pygame
 
 from settings import Settings
 from ship import Ship
 from bullet import Bullet
+from alien import Alien
+
 
 class AlienInvasion:
     """Clase general para gestionar los recursos y comportamientos del juego."""
@@ -13,19 +16,25 @@ class AlienInvasion:
         pygame.init()
         self.clock = pygame.time.Clock()
         self.settings = Settings()
-        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        self.settings.screen_width = self.screen.get_rect().width
-        self.settings.screen_height = self.screen.get_rect().height
+        
+        self.screen = pygame.display.set_mode(
+            (self.settings.screen_width, self.settings.screen_height))
         pygame.display.set_caption("Alien Invasion")
         
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
+        self.aliens = pygame.sprite.Group()
         
     def run_game(self):
         """Inicializa el bucle principal para el juego."""
         while True:
             self._check_events()
+            self._create_alien()
+
             self.ship.update()
+            self.bullets.update()
+            self.aliens.update()  # 🔹 se agrego para mover los aliens
+
             self._update_bullets()
             self._update_screen()
             self.clock.tick(60)
@@ -66,26 +75,34 @@ class AlienInvasion:
             
     def _update_bullets(self):
         """Actualiza la posición de las balas y se deshace de las viejas."""
-        # Actualiza las posiciones de las balas
-        self.bullets.update()
-        
-        # Se deshace de las balas que han desaparecido
         for bullet in self.bullets.copy():
             if bullet.rect.left >= self.screen.get_rect().right:
                 self.bullets.remove(bullet)
+        self._check_bullet_alien_collisions()
+        
+    def _check_bullet_alien_collisions(self):
+        """Responde a las colisiones bala-alien."""
+        pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+            
+    def _create_alien(self):
+        """Crea un alien si la condición se cumple."""
+        if random() < self.settings.alien_frequency:
+            alien = Alien(self)
+            self.aliens.add(alien)
                 
     def _update_screen(self):
-        """Actualiza las imagenes en la pantalla y cambia a la pantalla nueva."""
+        """Actualiza las imágenes en la pantalla."""
         self.screen.fill(self.settings.bg_color)
-        
-        for bullet in self.bullets.sprites():
-            bullet.draw_bullet()    
         self.ship.blitme()
         
+        for bullet in self.bullets.sprites():
+            bullet.draw_bullet()
+        
+        self.aliens.draw(self.screen)  # 🔹 asegura que los aliens se dibujen
+
         pygame.display.flip()
         
-        
+
 if __name__ == '__main__':
-    # Hace una instancia del juego y lo ejecuta
     ai = AlienInvasion()
     ai.run_game()
